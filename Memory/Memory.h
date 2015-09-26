@@ -10,16 +10,34 @@
 using namespace std;
 
 class Memory {
-public: class Memory_unit_info {
+    struct Memory_unit_info {
         int addr;
-        int size;
+        size_t size;
+
+        Memory_unit_info(int addr, size_t size) : size(size), addr(addr) { }
     };
 
     class Memory_unit {
         int memory;
     };
 
-    vector<Memory_unit_info> info;
+    vector<Memory_unit_info> info_free;
+    vector<Memory_unit_info> info_in_use;
+    vector<Memory_unit> memory_block;
+
+//    int find_free_space(size_t size);
+
+
+public:
+    Memory(size_t size);
+
+    void *mem_alloc(size_t size);
+
+    void *mem_realloc(void *addr, size_t size);
+
+    void mem_free(void *addr);
+
+    void mem_dump();
 };
 
 

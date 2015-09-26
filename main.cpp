@@ -5,9 +5,7 @@ using namespace std;
 
 int main() {
     cout << "Hello, World!" << endl;
-    Memory m = Memory();
-    Memory::Memory_unit mu = Memory::Memory_unit();
-    cout << sizeof(mu) << endl;
+    Memory m = Memory(128);
 
     return 0;
 }
