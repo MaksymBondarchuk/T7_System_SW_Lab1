@@ -23,9 +23,8 @@ class Memory {
 
     vector<Memory_unit_info> info_free;
     vector<Memory_unit_info> info_in_use;
-    vector<Memory_unit> memory_block;
 
-//    int find_free_space(size_t size);
+    vector<Memory_unit> memory_block;
 
 
 public:
@@ -38,6 +37,8 @@ public:
     void mem_free(void *addr);
 
     void mem_dump();
+
+    long what_number_am_i(void *addr);
 };
 
 
