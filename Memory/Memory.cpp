@@ -5,6 +5,8 @@
 #include "Memory.h"
 
 Memory::Memory(size_t size) {
+    size = size_with_align_4B(size);
+
     info_free = vector<Memory_unit_info>();
     info_free.push_back(Memory_unit_info(0, size)); // All memory is free
 
