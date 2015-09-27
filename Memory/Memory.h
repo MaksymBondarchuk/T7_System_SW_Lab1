@@ -19,6 +19,11 @@ class Memory {
 
     class Memory_unit {
         int memory;
+
+    public:
+        void operator=(const Memory_unit &unit) {
+            this->memory = unit.memory;
+        }
     };
 
     // Information about memory

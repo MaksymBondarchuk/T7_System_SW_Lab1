@@ -88,6 +88,9 @@ void *Memory::mem_realloc(void *addr, size_t size) {
                 info_free[i].size -= size;
             }
 
+            // Moving data to new place
+            for (int j = 0; j < info_in_use[used_idx].size; j++)
+                memory_block[info_in_use[used_idx].addr + j] = memory_block[info_free[i].addr + j];
             mem_free(addr);
 
             return &memory_block[info_in_use[info_in_use.size() - 1].addr];
