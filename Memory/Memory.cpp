@@ -3,7 +3,6 @@
 //
 
 #include "Memory.h"
-#include <iomanip>
 
 Memory::Memory(size_t size) {
     info_free = vector<Memory_unit_info>();
