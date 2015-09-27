@@ -15,7 +15,7 @@ int main() {
     m.mem_free(ref2);
     m.mem_dump();
 
-    m.mem_realloc(ref1, 4);
+    m.mem_realloc(ref1, 9);
 
 //    cout << m.what_number_am_i(ref0) << endl;
 //    cout << m.what_number_am_i(ref1) << endl;

@@ -16,6 +16,8 @@ Memory::Memory(size_t size) {
 }
 
 void *Memory::mem_alloc(size_t size) {
+    size = size_with_align_4B(size);
+
     for (int i = 0; i < info_free.size(); i++)
         if (size <= info_free[i].size) {
             info_in_use.push_back(Memory_unit_info(info_free[i].addr, size));
@@ -33,6 +35,8 @@ void *Memory::mem_alloc(size_t size) {
 }
 
 void *Memory::mem_realloc(void *addr, size_t size) {
+    size = size_with_align_4B(size);
+
     if (addr == NULL)
         return mem_alloc(size);
 
@@ -44,17 +48,19 @@ void *Memory::mem_realloc(void *addr, size_t size) {
         if (info_in_use[i].addr == idx) {
             my_size = (int) info_in_use[i].size;
             used_idx = i;
+            break;
         }
-    size_t size_minus_my_size = size - my_size;
+    size_t need_size = size - my_size;
     for (int i = 0; i < info_free.size(); i++)
-        if (info_free[i].addr == idx + size && size_minus_my_size <= info_free[i].size) {
-            info_in_use[used_idx].size += size_minus_my_size;
-            if (info_free[i].size == size_minus_my_size)
+        if (info_free[i].addr == idx + my_size && need_size <= info_free[i].size) {
+            info_in_use[used_idx].size += need_size;
+            if (info_free[i].size == need_size)
                 info_free.erase(info_free.begin() + i);
             else {
-                info_free[i].addr += size_minus_my_size;
-                info_free[i].size -= size_minus_my_size;
+                info_free[i].addr += need_size;
+                info_free[i].size -= need_size;
             }
+            return addr;
         }
 
     // If cannot enhance current block
@@ -70,9 +76,9 @@ void *Memory::mem_realloc(void *addr, size_t size) {
 
             mem_free(addr);
 
-            for (int j = 0; j < info_in_use.size(); j++)
-                if (info_in_use[j].addr == idx)
-                    info_in_use.erase(info_in_use.begin() + j);
+//            for (int j = 0; j < info_in_use.size(); j++)
+//                if (info_in_use[j].addr == idx)
+//                    info_in_use.erase(info_in_use.begin() + j);
 
             return &memory_block[info_in_use[info_in_use.size() - 1].addr];
         }
@@ -111,4 +117,10 @@ long Memory::what_number_am_i(void *addr) {
     if (addr == NULL)
         return -1;
     return ((long) addr - (long) &memory_block[0]) / sizeof(Memory_unit);
+}
+
+size_t Memory::size_with_align_4B(size_t size) {
+    if (size % 4 == 0)
+        return size;
+    return size - size % 4 + 4;
 }

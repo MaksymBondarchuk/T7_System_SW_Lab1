@@ -26,6 +26,9 @@ class Memory {
 
     vector<Memory_unit> memory_block;
 
+    long what_number_am_i(void *addr);
+
+    size_t size_with_align_4B(size_t size);
 
 public:
     Memory(size_t size);
@@ -37,8 +40,6 @@ public:
     void mem_free(void *addr);
 
     void mem_dump();
-
-    long what_number_am_i(void *addr);
 };
 
 
