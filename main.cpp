@@ -5,14 +5,23 @@
 using namespace std;
 
 int main() {
-    Memory m = Memory(128);
-    void *ref = m.mem_alloc(12);
-    void *ref1 = m.mem_alloc(45);
-    void *ref2 = m.mem_alloc(200);
+    Memory m = Memory(12 + 46);
+    m.mem_dump();
+    void *ref0 = m.mem_alloc(3);
+    void *ref1 = m.mem_alloc(3);
+    void *ref2 = m.mem_alloc(3);
+    void *ref3 = m.mem_alloc(3);
+    m.mem_dump();
+    m.mem_free(ref2);
+    m.mem_dump();
 
-    cout << m.what_number_am_i(ref) << endl;
-    cout << m.what_number_am_i(ref1) << endl;
-    cout << m.what_number_am_i(ref2) << endl;
+    m.mem_realloc(ref1, 4);
+
+//    cout << m.what_number_am_i(ref0) << endl;
+//    cout << m.what_number_am_i(ref1) << endl;
+//    cout << m.what_number_am_i(ref2) << endl;
+
+    m.mem_dump();
 
     return 0;
 }
