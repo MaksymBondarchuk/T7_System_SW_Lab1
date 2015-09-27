@@ -7,8 +7,7 @@
 
 Memory::Memory(size_t size) {
     info_free = vector<Memory_unit_info>();
-//    Memory_unit_info mui = Memory_unit_info(0, size);
-    info_free.push_back(Memory_unit_info(0, size));
+    info_free.push_back(Memory_unit_info(0, size)); // All memory is free
 
     info_in_use = vector<Memory_unit_info>();
 
@@ -21,9 +20,9 @@ void *Memory::mem_alloc(size_t size) {
     for (int i = 0; i < info_free.size(); i++)
         if (size <= info_free[i].size) {
             info_in_use.push_back(Memory_unit_info(info_free[i].addr, size));
-            if (info_free[i].size == size)
+            if (info_free[i].size == size)  // If allocating the whole block
                 info_free.erase(info_free.begin() + i);
-            else {
+            else {  // PArt of block
                 info_free[i].addr += size;
                 info_free[i].size -= size;
             }
@@ -40,28 +39,42 @@ void *Memory::mem_realloc(void *addr, size_t size) {
     if (addr == NULL)
         return mem_alloc(size);
 
-    // Trying enhance block
-    long idx = what_number_am_i(addr);
-    size_t my_size = 0;
-    int used_idx = 0;
-    for (int i = 0; i < info_in_use.size(); i++)
+    // Trying enhance current block
+    long idx = what_number_am_i(addr);  // Index in memory
+    size_t my_size = 0;                 // Size of current block
+    int used_idx = 0;                   // Current block index in info vector
+    for (int i = 0; i < info_in_use.size(); i++)    // Finding this index
         if (info_in_use[i].addr == idx) {
             my_size = (int) info_in_use[i].size;
             used_idx = i;
             break;
         }
-    size_t need_size = size - my_size;
-    for (int i = 0; i < info_free.size(); i++)
-        if (info_free[i].addr == idx + my_size && need_size <= info_free[i].size) {
-            info_in_use[used_idx].size += need_size;
-            if (info_free[i].size == need_size)
-                info_free.erase(info_free.begin() + i);
-            else {
+    int need_size = (int) (size - my_size);  // How many more we need
+    if (need_size > 0) {    // If we need to extend
+        for (int i = 0; i < info_free.size(); i++)
+            if (info_free[i].addr == idx + my_size &&
+                need_size <= info_free[i].size) {     // If have on right free block
+                info_in_use[used_idx].size += need_size;
+                if (info_free[i].size == need_size)
+                    info_free.erase(info_free.begin() + i);
+                else {
+                    info_free[i].addr += need_size;
+                    info_free[i].size -= need_size;
+                }
+                return addr;
+            }
+    }
+    else {  // If we need to reduce
+        info_in_use[used_idx].size += need_size;
+        for (int i = 0; i < info_free.size(); i++)
+            if (info_free[i].addr == idx + info_in_use[used_idx].size - need_size) {
                 info_free[i].addr += need_size;
                 info_free[i].size -= need_size;
+                return addr;
             }
-            return addr;
-        }
+        info_free.push_back(Memory_unit_info((int) (info_in_use[used_idx].addr + info_in_use[used_idx].size),
+                                             (size_t) -need_size));
+    }
 
     // If cannot enhance current block
     for (int i = 0; i < info_free.size(); i++)
@@ -75,10 +88,6 @@ void *Memory::mem_realloc(void *addr, size_t size) {
             }
 
             mem_free(addr);
-
-//            for (int j = 0; j < info_in_use.size(); j++)
-//                if (info_in_use[j].addr == idx)
-//                    info_in_use.erase(info_in_use.begin() + j);
 
             return &memory_block[info_in_use[info_in_use.size() - 1].addr];
         }
