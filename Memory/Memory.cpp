@@ -101,6 +101,23 @@ void Memory::mem_free(void *addr) {
         if (idx == info_in_use[i].addr) {
             info_free.push_back(Memory_unit_info(info_in_use[i].addr, info_in_use[i].size));
             info_in_use.erase(info_in_use.begin() + i);
+            break;
+        }
+
+    // Finding free block after current to merge
+    for (int i = 0; i < info_free.size() - 1; i++)
+        if (info_free[info_free.size() - 1].addr + info_free[info_free.size() - 1].size == info_free[i].addr) {
+            info_free[info_free.size() - 1].size += info_free[i].size;
+            info_free.erase(info_free.begin() + i);
+            break;
+        }
+
+    // Finding free block before current to merge
+    for (int i = 0; i < info_free.size() - 1; i++)
+        if (info_free[i].addr + info_free[i].size == info_free[info_free.size() - 1].addr) {
+            info_free[i].size += info_free[info_free.size() - 1].size;
+            info_free.erase(info_free.begin() + info_free.size() - 1);
+            break;
         }
 }
 
