@@ -11,9 +11,39 @@ Memory::Memory(uint16_t pages_number, uint16_t page_size) {
 }
 
 void *Memory::mem_alloc(size_t size) {
-    size = size_with_align_4B(size);
+    size = size_with_align_4B((uint32_t) size);
 
+    // If need one page or more
+    if (pages[0].page_size <= size) {
+        // How many
+        size_t how_many = size / pages[0].page_size;
+        if (how_many * pages[0].page_size < size)
+            how_many++;
 
+        uint16_t current_length = 0;
+        int start_idx = -1;
+        for (uint16_t i = 0; i < pages.size(); i++) {
+            if (current_length == 0 && pages[i].state == 0) {
+                current_length++;
+                start_idx = i;
+            }
+            else if (current_length != 0 && pages[i].state == 0) {
+                current_length++;
+                if (current_length == how_many)
+                    break;
+            }
+            else
+                current_length = 0;
+        }
+
+        if (start_idx == -1)
+            return NULL;
+
+        for (uint16_t i = 0; i < how_many; i++)
+            pages[start_idx + i].state = 3;
+
+        return &pages[start_idx];
+    }
 
 
 //    for (int i = 0; i < info_free_pages.size(); i++)

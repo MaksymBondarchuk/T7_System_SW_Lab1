@@ -5,6 +5,10 @@ using namespace std;
 
 int main() {
     Memory m = Memory(3, 32);
+
+    size_t how_many = 9 / 4;
+    cout << how_many << endl;
+
 //    m.mem_dump();
 //    void *ref0 = m.mem_alloc(16);
 //    m.mem_dump();
