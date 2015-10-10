@@ -7,46 +7,62 @@
 
 #include <vector>
 #include <iostream>
+
 using namespace std;
 
 class Memory {
-    struct Memory_unit_info {
-        int addr;
-        size_t size;
-
-        Memory_unit_info(int addr, size_t size) : size(size), addr(addr) { }
-    };
-
     class Page {
+        class Memory_unit {
+            int memory;
 
-
-    };
-
-    class Memory_unit {
-        int memory;
+        public:
+            void operator=(const Memory_unit &unit) {
+                this->memory = unit.memory;
+            }
+        };
 
     public:
-        void operator=(const Memory_unit &unit) {
-            this->memory = unit.memory;
+        uint16_t page_size;
+        uint8_t state = 0;  // 0 - free; 2 - divided to blocks; 3 - whole in use
+        uint16_t block_length = 0;
+        vector<Memory_unit> memory_block;
+        vector<uint16_t> in_use_blocks_info;
+
+
+        Page(const uint16_t page_size) {
+            this->page_size = page_size;
+        }
+
+        void split_to_blocks(uint16_t block_length) {
+            uint16_t page_size_copy = page_size;
+            while (2 <= page_size_copy) {
+                if (page_size_copy < block_length) {
+                    page_size_copy *= 2;
+                    break;
+                }
+                page_size_copy /= 2;
+            }
+
+            this->block_length = page_size_copy;
+            memory_block = vector<Memory_unit>((unsigned long) (page_size / 4));
+            in_use_blocks_info = vector<uint16_t>();
+            state = 2;
         }
     };
 
-    // Information about memory
-    vector<Memory_unit_info> info_free;
-    vector<Memory_unit_info> info_in_use;
+
 
     // Memory
-    vector<Memory_unit> memory_block;
+    vector<Page> pages;
 
     // Returns index of memory start from addr
     long what_number_am_i(void *addr);
 
-
     // Returns size aligned to 4B
-    size_t size_with_align_4B(size_t size);
+    uint32_t size_with_align_4B(uint32_t size);
 
 public:
-    Memory(size_t size);
+    Memory(uint16_t pages_number, uint16_t page_size);
 
     // Allocates memory. If cannot returns NULL
     void *mem_alloc(size_t size);
