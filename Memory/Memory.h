@@ -17,6 +17,11 @@ class Memory {
         Memory_unit_info(int addr, size_t size) : size(size), addr(addr) { }
     };
 
+    class Page {
+
+
+    };
+
     class Memory_unit {
         int memory;
 
@@ -35,6 +40,7 @@ class Memory {
 
     // Returns index of memory start from addr
     long what_number_am_i(void *addr);
+
 
     // Returns size aligned to 4B
     size_t size_with_align_4B(size_t size);
