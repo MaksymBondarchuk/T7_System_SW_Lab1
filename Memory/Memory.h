@@ -11,6 +11,14 @@
 using namespace std;
 
 class Memory {
+    struct pages_with_state_3_block {
+        uint16_t start_idx;
+        uint16_t number_of_pages;
+
+        pages_with_state_3_block(uint16_t start_idx, uint16_t number_of_pages) : start_idx(start_idx),
+                                                                                 number_of_pages(number_of_pages) { }
+    };
+
     class Page {
         class Memory_unit {
             int memory;
@@ -53,6 +61,7 @@ class Memory {
 
     // Memory
     vector<Page> pages;
+    vector<pages_with_state_3_block> pages_blocks;
 
     // Returns index of memory start from addr
     long what_number_am_i(void *addr);
