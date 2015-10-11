@@ -221,3 +221,19 @@ uint32_t Memory::size_with_align_4B(uint32_t size) {
 uint16_t Memory::offset(uint16_t page, uint16_t block) {
     return pages[page].page_size * page + pages[page].block_size * block;
 }
+
+void Memory::Page::split_to_blocks(uint16_t block_length) {
+    uint16_t page_size_copy = page_size;
+    while (2 <= page_size_copy) {
+        if (page_size_copy < block_length) {
+            page_size_copy *= 2;
+            break;
+        }
+        page_size_copy /= 2;
+    }
+
+    this->block_size = page_size_copy;
+    blocks_count = page_size / page_size_copy;
+    in_use_blocks_info = vector<uint16_t>();
+    state = 2;
+}
