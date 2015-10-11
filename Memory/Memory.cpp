@@ -166,6 +166,9 @@ void *Memory::mem_realloc(void *addr, size_t size) {
 }
 
 void Memory::mem_free(void *addr) {
+
+
+
 //    long idx = what_number_am_i(addr);
 //    for (int i = 0; i < info_in_use.size(); i++)
 //        if (idx == info_in_use[i].addr) {
@@ -221,24 +224,16 @@ void Memory::mem_dump() {
     cout << "------------------------------------------------------\n\n";
 }
 
-long Memory::what_number_am_i(void *addr) {
+Memory::mem_location Memory::what_number_am_i(void *addr) {
     if (addr == NULL)
-        return -1;
+        return mem_location(-1, -1);
 
-//    long needed_addr = (long) addr;
-//
-////    void *s_addr = &pages[0];
-////    long start_addr = (long) s_addr;
-//
-//    for (int i = 0; i < pages.size(); i++) {
-//        void *c_addr = &pages[i];
-//        long current_addr = (long) c_addr;
-//        if (current_addr <= needed_addr && needed_addr < current_addr + sizeof(pages[i]))
-//            return i;
-//    }
-//    return -1;
-
-    return ((long) addr - (long) &memory_block[0]) / pages[0].page_size / sizeof(Memory_unit);
+    size_t page = ((long) addr - (long) &memory_block[0]) / pages[0].page_size / sizeof(Memory_unit);
+    if (pages[page].block_size == 0)
+        return mem_location((int) page, -1);
+    size_t block = (((long) addr - (long) &memory_block[pages[0].page_size * page])) / pages[page].block_size /
+                   sizeof(Memory_unit);
+    return mem_location((int) page, (int) block);
 }
 
 uint32_t Memory::size_with_align_4B(uint32_t size) {
