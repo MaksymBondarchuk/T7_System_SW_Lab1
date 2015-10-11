@@ -39,6 +39,9 @@ void *Memory::mem_alloc(size_t size) {
                 current_length = 0;
         }
 
+        if (current_length < how_many)
+            return NULL;
+
         if (start_idx == -1)
             return NULL;
 
@@ -151,6 +154,7 @@ void Memory::mem_free(void *addr) {
                 return;
             }
 
+    // If delete part of page
     if (pages[idx.page].state == 2) {
         if (pages[idx.page].in_use_blocks_info.size() == 1 && pages[idx.page].in_use_blocks_info[0] == idx.block) {
             pages[idx.page].state = 0;
