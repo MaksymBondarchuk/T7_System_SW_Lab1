@@ -166,32 +166,34 @@ void *Memory::mem_realloc(void *addr, size_t size) {
 }
 
 void Memory::mem_free(void *addr) {
+    mem_location idx = what_number_am_i(addr);
 
+    if (idx.page == -1)
+        return;
 
+    // If delete block of pages
+    if (pages[idx.page].state == 0)
+        for (uint16_t i = 0; i < pages_blocks.size(); i++)
+            if (pages_blocks[i].start_idx == idx.page) {
+                for (uint16_t j = 0; j < pages_blocks[i].number_of_pages; j++)
+                    pages[pages_blocks[i].start_idx + j].state = 0;
+                pages_blocks.erase(pages_blocks.begin() + i);
+                return;
+            }
 
-//    long idx = what_number_am_i(addr);
-//    for (int i = 0; i < info_in_use.size(); i++)
-//        if (idx == info_in_use[i].addr) {
-//            info_free_pages.push_back(Memory_unit_info(info_in_use[i].addr, info_in_use[i].size));
-//            info_in_use.erase(info_in_use.begin() + i);
-//            break;
-//        }
-//
-//    // Finding free block after current to merge
-//    for (int i = 0; i < info_free_pages.size() - 1; i++)
-//        if (info_free_pages[info_free_pages.size() - 1].addr + info_free_pages[info_free_pages.size() - 1].size == info_free_pages[i].addr) {
-//            info_free_pages[info_free_pages.size() - 1].size += info_free_pages[i].size;
-//            info_free_pages.erase(info_free_pages.begin() + i);
-//            break;
-//        }
-//
-//    // Finding free block before current to merge
-//    for (int i = 0; i < info_free_pages.size() - 1; i++)
-//        if (info_free_pages[i].addr + info_free_pages[i].size == info_free_pages[info_free_pages.size() - 1].addr) {
-//            info_free_pages[i].size += info_free_pages[info_free_pages.size() - 1].size;
-//            info_free_pages.erase(info_free_pages.begin() + info_free_pages.size() - 1);
-//            break;
-//        }
+    if (pages[idx.page].state == 2) {
+        if (pages[idx.page].in_use_blocks_info.size() == 1 && pages[idx.page].in_use_blocks_info[0] == idx.block) {
+            pages[idx.page].state = 0;
+            pages[idx.page].in_use_blocks_info = vector<uint16_t>();
+            return;
+        }
+        else if (
+                find(pages[idx.page].in_use_blocks_info.begin(), pages[idx.page].in_use_blocks_info.end(), idx.block) !=
+                pages[idx.page].in_use_blocks_info.end()) {
+            pages[idx.page].in_use_blocks_info.erase(pages[idx.page].in_use_blocks_info.begin() + idx.block);
+            return;
+        }
+    }
 }
 
 void Memory::mem_dump() {

@@ -31,15 +31,14 @@ public:
     public:
         uint16_t page_size;
         uint8_t state = 0;  // 0 - free; 2 - divided to blocks; 3 - whole in use
-        uint16_t block_size = 0;
-        uint16_t blocks_count = 1;
+        uint16_t block_size;
+        uint16_t blocks_count;
 
         vector<uint16_t> in_use_blocks_info;
 
 
         Page(const uint16_t page_size) {
             this->page_size = page_size;
-//            memory_block = vector<Memory_unit>((unsigned long) (page_size / 4));
         }
 
         void split_to_blocks(uint16_t block_length) {
