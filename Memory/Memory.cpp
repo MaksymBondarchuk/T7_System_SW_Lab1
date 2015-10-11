@@ -6,6 +6,16 @@
 #include <algorithm>
 
 Memory::Memory(uint16_t pages_number, uint16_t page_size) {
+    // Page size must be 2 in some power
+    long _2_in_some_power = 2;
+    while (_2_in_some_power < pow(2, 20)) {
+        _2_in_some_power *= 2;
+        if (_2_in_some_power < page_size && page_size <= _2_in_some_power * 2) {
+            page_size = (uint16_t) (_2_in_some_power * 2);
+            break;
+        }
+    }
+
     page_size = (uint16_t) size_with_align_4B(page_size);
 
     pages = vector<Page>(pages_number, Page(page_size));
@@ -23,6 +33,7 @@ void *Memory::mem_alloc(size_t size) {
         if (how_many * pages[0].page_size < size)
             how_many++;
 
+        // Looking for free pages
         uint16_t current_length = 0;
         int start_idx = -1;
         for (uint16_t i = 0; i < pages.size(); i++) {
@@ -40,9 +51,6 @@ void *Memory::mem_alloc(size_t size) {
         }
 
         if (current_length < how_many)
-            return NULL;
-
-        if (start_idx == -1)
             return NULL;
 
         for (uint16_t i = 0; i < how_many; i++)
@@ -72,7 +80,7 @@ void *Memory::mem_alloc(size_t size) {
             return &memory_block[offset(i, 0)];
         }
 
-    // Again trying to get part of divided page
+    // Again trying to get part of divided page (even if it divided to bigger parts)
     int min_size = -1;
     int min_page = -1;
     for (uint16_t i = 0; i < pages.size(); i++)
@@ -85,6 +93,7 @@ void *Memory::mem_alloc(size_t size) {
     if (min_size == -1)
         return NULL;
 
+    // Looking for part which is nearer to our size
     for (uint16_t i = 0; i < pages.size(); i++)
         if (pages[i].state == 2 && size <= pages[i].block_size && pages[i].have_free_block() &&
             pages[i].block_size < min_size) {
@@ -110,6 +119,7 @@ void *Memory::mem_realloc(void *addr, size_t size) {
 
     mem_location idx = what_number_am_i(addr);
 
+    // If old memoory is one or more pages
     if (pages[idx.page].state == 3) {
         for (int i = 0; i < pages_blocks.size(); i++)
             if (pages_blocks[i].start_idx == idx.page) {
@@ -124,6 +134,7 @@ void *Memory::mem_realloc(void *addr, size_t size) {
             }
     }
 
+    // If old memory is part of some page
     if (pages[idx.page].state == 2) {
         if (pages[idx.page].block_size / 2 < size && size <= pages[idx.page].block_size)
             return addr;
@@ -176,9 +187,6 @@ void Memory::mem_dump() {
     for (int16_t i = 0; i < pages.size(); i++)
         cout << (int) pages[i].state << " ";
     cout << endl;
-//    cout << "1 - free page" << endl;
-//    cout << "2 - divided to blocks" << endl;
-//    cout << "3 - whole in use" << endl;
     cout << endl;
 
     for (int16_t i = 0; i < pages.size(); i++)
@@ -224,6 +232,8 @@ uint16_t Memory::offset(uint16_t page, uint16_t block) {
 
 void Memory::Page::split_to_blocks(uint16_t block_length) {
     uint16_t page_size_copy = page_size;
+
+    // Page must be divided to equal parts
     while (2 <= page_size_copy) {
         if (page_size_copy < block_length) {
             page_size_copy *= 2;

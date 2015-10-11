@@ -4,7 +4,7 @@
 using namespace std;
 
 int main() {
-    Memory m = Memory(6, 32);
+    Memory m = Memory(6, 30);
 
     void *r0 = m.mem_alloc(32 * 2);
     m.mem_dump();
