@@ -119,7 +119,7 @@ void *Memory::mem_realloc(void *addr, size_t size) {
 
     mem_location idx = what_number_am_i(addr);
 
-    // If old memoory is one or more pages
+    // If old memory is one or more pages
     if (pages[idx.page].state == 3) {
         for (int i = 0; i < pages_blocks.size(); i++)
             if (pages_blocks[i].start_idx == idx.page) {
