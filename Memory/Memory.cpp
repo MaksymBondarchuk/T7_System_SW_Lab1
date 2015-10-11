@@ -47,7 +47,6 @@ void *Memory::mem_alloc(size_t size) {
 
         pages_blocks.push_back(pages_with_state_3_block((uint16_t) start_idx, (uint16_t) how_many));
 
-        int off = offset((uint16_t) start_idx, 0);
         return &memory_block[offset((uint16_t) start_idx, 0)];
     }
 
@@ -101,66 +100,37 @@ void *Memory::mem_alloc(size_t size) {
 }
 
 void *Memory::mem_realloc(void *addr, size_t size) {
-//    size = size_with_align_4B(size);
-//
-//    if (addr == NULL)
-//        return mem_alloc(size);
-//
-//    // Trying enhance current block
-//    long idx = what_number_am_i(addr);  // Index in memory
-//    size_t my_size = 0;                 // Size of current block
-//    int used_idx = 0;                   // Current block index in info vector
-//    for (int i = 0; i < info_in_use.size(); i++)    // Finding this index
-//        if (info_in_use[i].addr == idx) {
-//            my_size = (int) info_in_use[i].size;
-//            used_idx = i;
-//            break;
-//        }
-//    int need_size = (int) (size - my_size);  // How many more we need
-//    if (need_size > 0) {    // If we need to extend
-//        for (int i = 0; i < info_free_pages.size(); i++)
-//            if (info_free_pages[i].addr == idx + my_size &&
-//                need_size <= info_free_pages[i].size) {     // If have on right free block
-//                info_in_use[used_idx].size += need_size;
-//                if (info_free_pages[i].size == need_size)
-//                    info_free_pages.erase(info_free_pages.begin() + i);
-//                else {
-//                    info_free_pages[i].addr += need_size;
-//                    info_free_pages[i].size -= need_size;
-//                }
-//                return addr;
-//            }
-//    }
-//    else {  // If we need to reduce
-//        info_in_use[used_idx].size += need_size;
-//        for (int i = 0; i < info_free_pages.size(); i++)
-//            if (info_free_pages[i].addr == idx + info_in_use[used_idx].size - need_size) {
-//                info_free_pages[i].addr += need_size;
-//                info_free_pages[i].size -= need_size;
-//                return addr;
-//            }
-//        info_free_pages.push_back(Memory_unit_info((int) (info_in_use[used_idx].addr + info_in_use[used_idx].size),
-//                                             (size_t) -need_size));
-//    }
-//
-//    // If cannot enhance current block
-//    for (int i = 0; i < info_free_pages.size(); i++)
-//        if (size <= info_free_pages[i].size) {
-//            info_in_use.push_back(Memory_unit_info(info_free_pages[i].addr, size));
-//            if (info_free_pages[i].size == size)
-//                info_free_pages.erase(info_free_pages.begin() + i);
-//            else {
-//                info_free_pages[i].addr += size;
-//                info_free_pages[i].size -= size;
-//            }
-//
-//            // Moving data to new place
-//            for (int j = 0; j < info_in_use[used_idx].size; j++)
-//                memory_block[info_in_use[used_idx].addr + j] = memory_block[info_free_pages[i].addr + j];
-//            mem_free(addr);
-//
-//            return &memory_block[info_in_use[info_in_use.size() - 1].addr];
-//        }
+    size = size_with_align_4B((uint32_t) size);
+
+    if (addr == NULL)
+        return mem_alloc(size);
+
+    mem_location idx = what_number_am_i(addr);
+
+    if (pages[idx.page].state == 3) {
+        for (int i = 0; i < pages_blocks.size(); i++)
+            if (pages_blocks[i].start_idx == idx.page) {
+                if (pages_blocks[i].number_of_pages * pages[0].page_size < size) {
+                    size_t old_size = pages_blocks[i].number_of_pages * pages[0].page_size;
+                    mem_free(addr);
+                    void *new_ref = mem_alloc(size);
+                    if (new_ref == NULL)
+                        return mem_alloc(old_size);
+                }
+                else return addr;
+            }
+    }
+
+    if (pages[idx.page].state == 2) {
+        if (pages[idx.page].block_size / 2 < size && size <= pages[idx.page].block_size)
+            return addr;
+
+        size_t old_size = pages[idx.page].block_size;
+        mem_free(addr);
+        void *new_ref = mem_alloc(size);
+        if (new_ref == NULL)
+            return mem_alloc(old_size);
+    }
 
     return NULL;
 }
