@@ -4,10 +4,20 @@
 using namespace std;
 
 int main() {
-    Memory m = Memory(3, 32);
+    Memory m = Memory(17, 32);
 
-    size_t how_many = 9 / 4;
-    cout << how_many << endl;
+    void *r0 = m.mem_alloc(32 * 3);
+    void *r1 = m.mem_alloc(34);
+
+    cout << m.what_number_am_i(r0) << "  " << r0 << endl;
+    cout << m.what_number_am_i(r1) << "  " << r1 << endl;
+
+    cout << sizeof(m.pages[0]) << endl;
+    cout << sizeof(m.pages[1]) << endl;
+//    cout << m.what_number_am_i(r1) << endl;
+
+
+
 
 //    m.mem_dump();
 //    void *ref0 = m.mem_alloc(16);

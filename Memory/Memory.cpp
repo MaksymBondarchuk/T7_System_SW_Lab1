@@ -8,13 +8,14 @@ Memory::Memory(uint16_t pages_number, uint16_t page_size) {
     page_size = (uint16_t) size_with_align_4B(page_size);
 
     pages = vector<Page>(pages_number, Page(page_size));
+    pages_blocks = vector<pages_with_state_3_block>();
 }
 
 void *Memory::mem_alloc(size_t size) {
     size = size_with_align_4B((uint32_t) size);
 
-    // If need one page or more
-    if (pages[0].page_size <= size) {
+    // If need more than half of the page
+    if (pages[0].page_size / 2 + 1 <= size) {
         // How many
         size_t how_many = size / pages[0].page_size;
         if (how_many * pages[0].page_size < size)
@@ -42,22 +43,29 @@ void *Memory::mem_alloc(size_t size) {
         for (uint16_t i = 0; i < how_many; i++)
             pages[start_idx + i].state = 3;
 
+        pages_blocks.push_back(pages_with_state_3_block((uint16_t) start_idx, (uint16_t) how_many));
+
         return &pages[start_idx];
     }
 
+    // Trying find already divided page
+    for (uint16_t i = 0; i < pages.size(); i++)
+        if (pages[i].state == 2 && pages[i].block_size / 2 < size && size <= pages[i].block_size &&
+            pages[i].have_free_block())
+            for (uint16_t j = 0; j < pages[i].blocks_count; j++)
+                if (find(pages[i].in_use_blocks_info.begin(), pages[i].in_use_blocks_info.end(), j) ==
+                    pages[i].in_use_blocks_info.end()) {
+                    pages[i].in_use_blocks_info.push_back(j);
+                    return &pages[i].memory_block[j];
+                }
 
-//    for (int i = 0; i < info_free_pages.size(); i++)
-//        if (size <= info_free_pages[i].size) {
-//            info_in_use.push_back(Memory_unit_info(info_free_pages[i].addr, size));
-//            if (info_free_pages[i].size == size)  // If allocating the whole block
-//                info_free_pages.erase(info_free_pages.begin() + i);
-//            else {  // PArt of block
-//                info_free_pages[i].addr += size;
-//                info_free_pages[i].size -= size;
-//            }
-//
-//            return &memory_block[info_in_use[info_in_use.size() - 1].addr];
-//        }
+    // Dividing free page
+    for (uint16_t i = 0; i < pages.size(); i++)
+        if (pages[i].state == 0) {
+            pages[i].split_to_blocks((uint16_t) size);
+            pages[i].in_use_blocks_info.push_back(0);
+            return &pages[i].memory_block[0];
+        }
 
     return NULL;
 }
@@ -172,9 +180,23 @@ void Memory::mem_dump() {
 }
 
 long Memory::what_number_am_i(void *addr) {
-//    if (addr == NULL)
-//        return -1;
-//    return ((long) addr - (long) &memory_block[0]) / sizeof(Memory_unit);
+    if (addr == NULL)
+        return -1;
+
+    long needed_addr = (long) addr;
+
+//    void *s_addr = &pages[0];
+//    long start_addr = (long) s_addr;
+
+    for (int i = 0; i < pages.size(); i++) {
+        void *c_addr = &pages[i];
+        long current_addr = (long) c_addr;
+        if (current_addr <= needed_addr && needed_addr < current_addr + sizeof(pages[i]))
+            return i;
+    }
+    return -1;
+
+//    return ((long) addr - (long) &pages[0]) / sizeof(Page);
 }
 
 uint32_t Memory::size_with_align_4B(uint32_t size) {
