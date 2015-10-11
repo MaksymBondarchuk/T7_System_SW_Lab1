@@ -20,27 +20,18 @@ class Memory {
     };
 
     class Page {
-        class Memory_unit {
-            int memory;
-
-        public:
-            void operator=(const Memory_unit &unit) {
-                this->memory = unit.memory;
-            }
-        };
-
     public:
         uint16_t page_size;
         uint8_t state = 0;  // 0 - free; 2 - divided to blocks; 3 - whole in use
         uint16_t block_size = 0;
         uint16_t blocks_count = 1;
-        vector<Memory_unit> memory_block;
+
         vector<uint16_t> in_use_blocks_info;
 
 
         Page(const uint16_t page_size) {
             this->page_size = page_size;
-            memory_block = vector<Memory_unit>((unsigned long) (page_size / 4));
+//            memory_block = vector<Memory_unit>((unsigned long) (page_size / 4));
         }
 
         void split_to_blocks(uint16_t block_length) {
@@ -60,7 +51,16 @@ class Memory {
         }
 
         bool have_free_block() {
-            return (blocks_count == in_use_blocks_info.size());
+            return (blocks_count != in_use_blocks_info.size());
+        }
+    };
+
+    class Memory_unit {
+        int memory;
+
+    public:
+        void operator=(const Memory_unit &unit) {
+            this->memory = unit.memory;
         }
     };
 
@@ -69,10 +69,14 @@ public:
     vector<Page> pages;
     vector<pages_with_state_3_block> pages_blocks;
 
+    vector<Memory_unit> memory_block;
+
 
 
     // Returns size aligned to 4B
     uint32_t size_with_align_4B(uint32_t size);
+
+    uint16_t offset(uint16_t page, uint16_t block);
 
 public:
     // Returns index of memory start from addr

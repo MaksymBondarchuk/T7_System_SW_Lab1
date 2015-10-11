@@ -3,12 +3,14 @@
 //
 
 #include "Memory.h"
+#include <algorithm>
 
 Memory::Memory(uint16_t pages_number, uint16_t page_size) {
     page_size = (uint16_t) size_with_align_4B(page_size);
 
     pages = vector<Page>(pages_number, Page(page_size));
     pages_blocks = vector<pages_with_state_3_block>();
+    memory_block = vector<Memory_unit>((unsigned long) (pages_number * page_size / 4));
 }
 
 void *Memory::mem_alloc(size_t size) {
@@ -45,7 +47,8 @@ void *Memory::mem_alloc(size_t size) {
 
         pages_blocks.push_back(pages_with_state_3_block((uint16_t) start_idx, (uint16_t) how_many));
 
-        return &pages[start_idx];
+        int off = offset((uint16_t) start_idx, 0);
+        return &memory_block[offset((uint16_t) start_idx, 0)];
     }
 
     // Trying find already divided page
@@ -56,15 +59,42 @@ void *Memory::mem_alloc(size_t size) {
                 if (find(pages[i].in_use_blocks_info.begin(), pages[i].in_use_blocks_info.end(), j) ==
                     pages[i].in_use_blocks_info.end()) {
                     pages[i].in_use_blocks_info.push_back(j);
-                    return &pages[i].memory_block[j];
+                    return &memory_block[offset(i, j)];
                 }
 
-    // Dividing free page
+    // Trying divide free page
     for (uint16_t i = 0; i < pages.size(); i++)
         if (pages[i].state == 0) {
             pages[i].split_to_blocks((uint16_t) size);
             pages[i].in_use_blocks_info.push_back(0);
-            return &pages[i].memory_block[0];
+            return &memory_block[offset(i, 0)];
+        }
+
+    // Again trying to get part of divided page
+    int min_size = -1;
+    int min_page = -1;
+    for (uint16_t i = 0; i < pages.size(); i++)
+        if (pages[i].state == 2 && size <= pages[i].block_size && pages[i].have_free_block()) {
+            min_size = pages[i].block_size;
+            min_page = i;
+            break;
+        }
+
+    if (min_size == -1)
+        return NULL;
+
+    for (uint16_t i = 0; i < pages.size(); i++)
+        if (pages[i].state == 2 && size <= pages[i].block_size && pages[i].have_free_block() &&
+            pages[i].block_size < min_size) {
+            min_size = pages[i].block_size;
+            min_page = i;
+        }
+
+    for (uint16_t j = 0; j < pages[min_page].blocks_count; j++)
+        if (find(pages[min_page].in_use_blocks_info.begin(), pages[min_page].in_use_blocks_info.end(), j) ==
+            pages[min_page].in_use_blocks_info.end()) {
+            pages[min_page].in_use_blocks_info.push_back(j);
+            return &memory_block[offset((uint16_t) min_page, j)];
         }
 
     return NULL;
@@ -162,45 +192,61 @@ void Memory::mem_free(void *addr) {
 }
 
 void Memory::mem_dump() {
-//    int i = 0;
-//    while (i < memory_block.size()) {
-//        for (int j = 0; j < info_free_pages.size(); j++)
-//            if (info_free_pages[j].addr == i) {
-//                cout << string(info_free_pages[j].size, '_');
-//                i += info_free_pages[j].size;
-//            }
-//
-//        for (int j = 0; j < info_in_use.size(); j++)
-//            if (info_in_use[j].addr == i) {
-//                cout << string(info_in_use[j].size, '*');
-//                i += info_in_use[j].size;
-//            }
-//    }
-//    cout << endl;
+    cout << "------------------------------------------------------\n";
+    cout << "Pages states: " << endl;
+    for (int16_t i = 0; i < pages.size(); i++)
+        cout << (int) pages[i].state << " ";
+    cout << endl;
+//    cout << "1 - free page" << endl;
+//    cout << "2 - divided to blocks" << endl;
+//    cout << "3 - whole in use" << endl;
+    cout << endl;
+
+    for (int16_t i = 0; i < pages.size(); i++)
+        if (pages[i].state == 2) {
+            cout << "Page #" << i << endl;
+            cout << "Block size - " << pages[i].block_size << endl;
+            cout << "Blocks count - " << pages[i].blocks_count << endl;
+            for (int16_t j = 0; j < pages[i].blocks_count; j++) {
+                if (find(pages[i].in_use_blocks_info.begin(), pages[i].in_use_blocks_info.end(), j) ==
+                    pages[i].in_use_blocks_info.end())
+                    cout << "_";
+                else
+                    cout << "*";
+            }
+            cout << endl << endl;
+        }
+
+
+    cout << "------------------------------------------------------\n\n";
 }
 
 long Memory::what_number_am_i(void *addr) {
     if (addr == NULL)
         return -1;
 
-    long needed_addr = (long) addr;
+//    long needed_addr = (long) addr;
+//
+////    void *s_addr = &pages[0];
+////    long start_addr = (long) s_addr;
+//
+//    for (int i = 0; i < pages.size(); i++) {
+//        void *c_addr = &pages[i];
+//        long current_addr = (long) c_addr;
+//        if (current_addr <= needed_addr && needed_addr < current_addr + sizeof(pages[i]))
+//            return i;
+//    }
+//    return -1;
 
-//    void *s_addr = &pages[0];
-//    long start_addr = (long) s_addr;
-
-    for (int i = 0; i < pages.size(); i++) {
-        void *c_addr = &pages[i];
-        long current_addr = (long) c_addr;
-        if (current_addr <= needed_addr && needed_addr < current_addr + sizeof(pages[i]))
-            return i;
-    }
-    return -1;
-
-//    return ((long) addr - (long) &pages[0]) / sizeof(Page);
+    return ((long) addr - (long) &memory_block[0]) / pages[0].page_size / sizeof(Memory_unit);
 }
 
 uint32_t Memory::size_with_align_4B(uint32_t size) {
     if (size % 4 == 0)
         return size;
     return size - size % 4 + 4;
+}
+
+uint16_t Memory::offset(uint16_t page, uint16_t block) {
+    return pages[page].page_size * page + pages[page].block_size * block;
 }
